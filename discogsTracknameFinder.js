@@ -36,6 +36,7 @@ const hasAlreadySearched = () => {
             if (sellerDetails[0].pages.filter(page => isWithinDate(2, page.date)).length > 0) {
                 return true;
             }
+            
         }
     }
     return false;
