@@ -23,6 +23,7 @@ currentDate = currentDate.toISOString().slice(0, 10);
 
 const seller = process.argv[2] || null;
 const pageNumber = process.argv[3] || null;
+const testing = process.argv[4] || null;
 
 const baseUrl = 'https://www.discogs.com';
 const fullUrl = `${baseUrl}/seller/${seller}/profile?sort=listed%2Cdesc&limit=25&year1=2016&year2=2020&price1=5&price2=18&genre=Electronic&style=Techno&format=Vinyl&format_desc=12%22&page=${pageNumber}`;
@@ -50,7 +51,7 @@ const isWithinDate = (numberOfMonths, lastVisited) => {
     return true;
 }
 
-hasAlreadySearched();
+// hasAlreadySearched();
 // console.log(hasAlreadySearched());
 
 const getTracknames = () => {
@@ -88,11 +89,15 @@ const getTracknames = () => {
                         });
                     })
                     .catch(console.error);
+                
+                if(testing !== 'all' && i === 3) {
+                    return false;
+                }
             });
         })
         .catch(console.error);
 }
 
 // if (seller && pageNumber && !hasAlreadySearched()) {
-//     getTracknames();
+    getTracknames();
 // }
