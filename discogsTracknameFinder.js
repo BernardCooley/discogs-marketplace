@@ -1,6 +1,15 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 var exec = require('child_process').exec;
+const fs = require('fs');
+const LineByLineReader = require('line-by-line');
+const lr = new LineByLineReader('alreadyListened.txt');
+
+const listened = [];
+
+lr.on('line', function (line) {
+    listened.push(line);
+});
 
 const baseUrl = 'https://www.discogs.com/';
 const fullUrl = 'https://www.discogs.com/seller/The-Bear/profile?sort=listed%2Cdesc&limit=25&year1=2016&year2=2020&style=Techno&format=Vinyl&format_desc=12%22&page=1';
@@ -37,11 +46,16 @@ const getTracknames = () => {
 
                             const string = `https://www.youtube.com/results?search_query=${searchString.replace(/ /g, '+')}`
 
-                            exec(`start chrome ${string}`, function (err) {
-                                if (err) {
-                                    console.log(err);
-                                }
-                            });
+                            if (!listened.includes(string)) {
+                                exec(`start chrome ${string}`, function (err) {
+                                    if (err) {
+                                        console.log(err);
+                                    }
+                                });
+                                fs.appendFile('alreadyListened.txt', `${string}\n`, function (err) {
+                                    if (err) throw err;
+                                });
+                            }
                         });
                     })
                     .catch(console.error);
@@ -50,4 +64,6 @@ const getTracknames = () => {
         .catch(console.error);
 }
 
-getTracknames();
+lr.on('end', function () {
+    getTracknames();
+});
