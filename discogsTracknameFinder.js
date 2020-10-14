@@ -28,9 +28,6 @@ const searchCriteria = {
     'Page': page
 }
 
-console.log(fullUrl);
-console.log(searchCriteria);
-
 const getTracknames = async () => {
     axios(fullUrl)
         .then(async response => {
@@ -86,9 +83,25 @@ const searchAllNewTracks = async (cheerio, tracklist) => {
                 if (err) throw err;
             });
         }
+        if (listened.includes(string)) {
+            console.log(`Skipping ${title} - ${artist}`);
+        }
     });
 }
 
 lr.on('end', function () {
-    seller.length > 0 ? getTracknames() : console.log('No seller added');
+    if(seller === '--help') {
+        const help = {
+            'command': 'node discogsTracknameFinder.js <seller> <page?> <year span?>',
+            'example': 'node discogsTracknameFinder.js flashback 1 4'
+        }
+
+        console.log(help);
+    } else {
+        console.log(fullUrl);
+        console.log(searchCriteria);
+
+        seller.length > 0 ? getTracknames() : console.log('No seller added');
+    }
+
 });
