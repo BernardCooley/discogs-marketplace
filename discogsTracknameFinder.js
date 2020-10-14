@@ -5,7 +5,7 @@ const fs = require('fs');
 const LineByLineReader = require('line-by-line');
 const lr = new LineByLineReader('alreadyListened.txt');
 
-const seller = process.argv[2] || '';
+const listType = process.argv[2] || '';
 const page = process.argv[3] || 1;
 const yearSpan = process.argv[4] || 4;
 
@@ -17,16 +17,6 @@ const listened = [];
 lr.on('line', function (line) {
     listened.push(line);
 });
-
-const baseUrl = 'https://www.discogs.com/';
-const fullUrl = `${baseUrl}seller/${seller}/profile?sort=listed%2Cdesc&limit=25&year1=${startYear}&year2=${currentYear}&style=Techno&format=Vinyl&format_desc=12%22&page=${page}`;
-
-const searchCriteria = {
-    'Seller': seller,
-    'Year from': startYear,
-    'Year to': currentYear,
-    'Page': page
-}
 
 const getTracknames = async () => {
     axios(fullUrl)
@@ -90,18 +80,41 @@ const searchAllNewTracks = async (cheerio, tracklist) => {
 }
 
 lr.on('end', function () {
-    if(seller === '--help') {
+    if(listType === '--help') {
         const help = {
-            'command': 'node discogsTracknameFinder.js <seller> <page?> <year span?>',
-            'example': 'node discogsTracknameFinder.js flashback 1 4'
+            'command': 'node discogsTracknameFinder.js <seller> || "new-listings" || "new-releases" <page? || 1> <yearSpan? || 4>',
+            'example1': 'node discogsTracknameFinder.js flashback',
+            'example2': 'node discogsTracknameFinder.js flashback 1 4',
+            'example3': 'node discogsTracknameFinder.js new-listings 3',
+            'example4': 'node discogsTracknameFinder.js new-releases 2'
         }
 
         console.log(help);
+    } else if (listType === '--removeFromListened') {
+        console.log('remove from listened');
     } else {
+        const baseUrl = 'https://www.discogs.com/';
+        let fullUrl = ``;
+
+        if(listType === 'new-listings') {
+            fullUrl = `${baseUrl}sell/list?year1=${startYear}&year2=${currentYear}&currency=GBP&style=Techno&format=Vinyl&format_desc=12%22&page=${page}`;
+        }else if (listType === 'new-releases') {
+            fullUrl = `${baseUrl}sell/list?year1=${currentYear}&year2=${currentYear}&currency=GBP&style=Techno&format=Vinyl&format_desc=12%22&page=${page}`
+        }else {
+            fullUrl = `${baseUrl}seller/${listType}/profile?sort=listed%2Cdesc&limit=25&year1=${startYear}&year2=${currentYear}&style=Techno&format=Vinyl&format_desc=12%22&page=${page}`;
+        }
+
+        const searchCriteria = {
+            'Seller': listType,
+            'Year from': startYear,
+            'Year to': currentYear,
+            'Page': page
+        }
+
         console.log(fullUrl);
         console.log(searchCriteria);
 
-        seller.length > 0 ? getTracknames() : console.log('No seller added');
+        listType.length > 0 ? getTracknames() : console.log('No listType added');
     }
 
 });
