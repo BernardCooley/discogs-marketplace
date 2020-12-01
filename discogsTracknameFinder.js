@@ -14,11 +14,13 @@ const currentYear = new Date().getFullYear();
 const startYear = Number(currentYear) - Number(yearSpan);
 const listened = [];
 
+const baseUrl = 'https://www.discogs.com/';
+
 lr.on('line', function (line) {
     listened.push(line);
 });
 
-const getTracknames = async () => {
+const getTracknames = async fullUrl => {
     axios(fullUrl)
         .then(async response => {
             const html = response.data;
@@ -93,7 +95,6 @@ lr.on('end', function () {
     } else if (listType === '--removeFromListened') {
         console.log('remove from listened');
     } else {
-        const baseUrl = 'https://www.discogs.com/';
         let fullUrl = ``;
 
         if(listType === 'new-listings') {
@@ -114,7 +115,7 @@ lr.on('end', function () {
         console.log(fullUrl);
         console.log(searchCriteria);
 
-        listType.length > 0 ? getTracknames() : console.log('No listType added');
+        listType.length > 0 ? getTracknames(fullUrl) : console.log('No listType added');
     }
 
 });
