@@ -31,41 +31,72 @@ const getTracknames = async fullUrl => {
                 console.log('No results');
             }
 
-            await getAllReleases($, details)
+            const fullTracklist = await getAllReleases(getSellRequests($, details));
+
+            searchAllNewTracks(fullTracklist);
         })
         .catch(console.error);
 }
 
-const getAllReleases = async (cheerio, details) => {
+const getSellRequests = (cheerio, details) => {
+    const sellRequests = [];
     details.each(async (i, elem) => {
-        let sellUrl = `${baseUrl}${cheerio(elem).find('a.item_description_title').attr('href')}`;
+        sellRequests.push(axios(`${baseUrl}${cheerio(elem).find('a.item_description_title').attr('href')}`));
+    });
+    return sellRequests;
+}
 
-        axios(sellUrl)
-            .then(async response => {
-                const sellHtml = response.data;
-                $ = cheerio.load(sellHtml);
-                const tracklist = $('.playlist > tbody > tr');
+const getAllReleases = async (sellRequests) => {
+    return Promise.all(sellRequests).then((response) => {
+        const sellHtmls = response;
 
-                await searchAllNewTracks($, tracklist);
-            })
-            .catch(console.error);
+        const fullTracklist = [];
+        sellHtmls.forEach((sellHtml => {
+            $ = cheerio.load(sellHtml.data);
+            const tracklist = $('.playlist > tbody > tr');
+            fullTracklist.push(...getReleaseTracklist($, tracklist));
+        }));
+
+        return listOfTags = fullTracklist,
+            keys = ['artist', 'title'],
+            filtered = listOfTags.filter(
+                (s => o =>
+                    (k => !s.has(k) && s.add(k))
+                        (keys.map(k => o[k]).join('|'))
+                )
+                    (new Set)
+            );
     });
 }
 
-const searchAllNewTracks = async (cheerio, tracklist) => {
-    tracklist.each(function () {
+const getReleaseTracklist = (cheerio, tracklist) => {
+    const list = [];
 
+    tracklist.each(function () {
         const releaseArtist = cheerio('.profile > h1 > span:nth-of-type(1)').text().trim().replace(/(\r\n|\n|\r)/gm, "");
         const trackArtist = cheerio(this).find('.tracklist_track_artists > a').text().trim();
         const title = cheerio(this).find('.tracklist_track_title > span').text().trim();
 
         const artist = (trackArtist.length > 0 ? trackArtist : releaseArtist);
 
-        const searchString = `${artist[artist.length - 1] === ')' ? artist.substring(0, artist.length - 4) : artist.replace('*', '')} - ${title}`;
+        const track = {
+            artist: artist,
+            title: title
+        }
+
+        list.push(track);
+    });
+
+    return list;
+}
+
+const searchAllNewTracks = async (fullTracklist) => {
+    fullTracklist.forEach(track => {
+        const searchString = `${track.artist[track.artist.length - 1] === ')' ? track.artist.substring(0, track.artist.length - 4) : track.artist.replace('*', '')} - ${track.title}`;
 
         const string = `https://www.youtube.com/results?search_query=${searchString.replace(/ /g, '+')}`;
 
-        if (!listened.includes(string) && artist.length > 0 && title.length > 0) {
+        if (!listened.includes(string) && track.artist.length > 0 && track.title.length > 0) {
             exec(`start chrome ${string}`, function (err) {
                 if (err) {
                     console.log(err);
@@ -76,13 +107,13 @@ const searchAllNewTracks = async (cheerio, tracklist) => {
             });
         }
         if (listened.includes(string)) {
-            console.log(`Skipping ${title} - ${artist}`);
+            console.log(`Skipping ${track.title} - ${track.artist}`);
         }
-    });
+    })
 }
 
 lr.on('end', function () {
-    if(listType === '--help') {
+    if (listType === '--help') {
         const help = {
             'command': 'node discogsTracknameFinder.js <seller> || "new-listings" || "new-releases" <page? || 1> <yearSpan? || 4>',
             'example1': 'node discogsTracknameFinder.js flashback',
@@ -97,11 +128,11 @@ lr.on('end', function () {
     } else {
         let fullUrl = ``;
 
-        if(listType === 'new-listings') {
+        if (listType === 'new-listings') {
             fullUrl = `${baseUrl}sell/list?year1=${startYear}&year2=${currentYear}&currency=GBP&style=Techno&format=Vinyl&format_desc=12%22&page=${page}`;
-        }else if (listType === 'new-releases') {
+        } else if (listType === 'new-releases') {
             fullUrl = `${baseUrl}sell/list?year1=${currentYear}&year2=${currentYear}&currency=GBP&style=Techno&format=Vinyl&format_desc=12%22&page=${page}`
-        }else {
+        } else {
             fullUrl = `${baseUrl}seller/${listType}/profile?sort=listed%2Cdesc&limit=25&year1=${startYear}&year2=${currentYear}&style=Techno&format=Vinyl&format_desc=12%22&page=${page}`;
         }
 
