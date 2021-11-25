@@ -69,6 +69,15 @@ const getAllReleases = async (sellRequests) => {
     });
 }
 
+const purgeString = (string) => {
+    let newString = string.replace(/ +(?= )/g, '');
+
+    if (newString[newString.length-1] === '*') {
+        newString = newString.substring(0, newString.length - 1);
+    }
+    return newString;
+}
+
 const getReleaseTracklist = (cheerio, tracklist) => {
     const list = [];
 
@@ -80,8 +89,8 @@ const getReleaseTracklist = (cheerio, tracklist) => {
         const artist = (trackArtist.length > 0 ? trackArtist : releaseArtist);
 
         const track = {
-            artist: artist,
-            title: title
+            artist: purgeString(artist),
+            title: purgeString(title)
         }
 
         list.push(track);
@@ -91,6 +100,12 @@ const getReleaseTracklist = (cheerio, tracklist) => {
 }
 
 const searchAllNewTracks = async (fullTracklist) => {
+    const date = new Date();
+    fs.appendFile('alreadyListened.txt', `\n\n${date}\n`, function (err) {
+        if (err) throw err;
+    });
+
+
     fullTracklist.forEach(track => {
         const searchString = `${track.artist[track.artist.length - 1] === ')' ? track.artist.substring(0, track.artist.length - 4) : track.artist.replace('*', '')} - ${track.title}`;
 
